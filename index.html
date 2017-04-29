@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Life Game</title>
+    <script src="https://npmcdn.com/react@15.3.1/dist/react.js"></script>
+    <script src="https://npmcdn.com/react-dom@15.3.1/dist/react-dom.js"></script>
+    <script src="https://npmcdn.com/babel-core@5.8.38/browser.min.js"></script>
+
+    <style type="text/css">
+      body {
+        width: 100000px;
+      }
+      .cell {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        margin-right: 5px;
+        background-color: #eee;
+        border-radius: 5px;
+      }      .alive0 {
+        background-color: #73ff28;
+      }
+      .alive1 {
+        background-color: #a2ff28;
+      }
+      .alive2 {
+        background-color: #b7ff28;
+      }
+      .alive3 {
+        background-color: #ffff28;
+      }
+      .alive4 {
+        background-color: #ffd428;
+      }
+      .alive5 {
+        background-color: #ffb728;
+      }
+      .alive6 {
+        background-color: #ff9328;
+      }
+      .alive7 {
+        background-color: #ff7029;
+      }
+      .alive8 {
+        background-color: #ff4c28;
+      }
+      .button {
+        font-size: 20px;
+        margin: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="content"></div>
+    <script type="text/babel">
+
+
+      /////////////////
+      // Board Class //
+      /////////////////
+
+      var Board = React.createClass({
+
+        getInitialState: function() {
+          return {
+            advancing: false
+          }
+        },
+
+        // Click handler for start button
+        clickStart: function() {
+          this.setState({ advancing: true })
+        },
+
+        // Click handler for stop button
+        clickStop: function() {
+          this.setState({ advancing: false })
+        },
+
+        timeAdvancing: function() {
+          if (this.state.advancing) {
+            this.updateGeneration();
+          }
+        },
+
+        componentDidMount: function() {
+          setInterval(this.timeAdvancing, 100);
+        },
+
+        updateGeneration: function() {
+          // For all cells on the board
+          for (var iy = 0; iy < this.props.ny; iy++) {
+            for (var ix = 0; ix < this.props.ny; ix++) {
+
+              // Calculate and update the number of neighboring alive cells
+              var neighbor = 0;
+              for (var py = -1; py <= 1; py++) {
+                for (var px = -1; px <= 1; px++) {
+                  if (px != 0 || py != 0) {
+                    var x = (ix + px + Number(this.props.nx)) % Number(this.props.nx);
+                    var y = (iy + py + Number(this.props.ny)) % Number(this.props.ny);
+                    if (this.refs[x + '_' + y].state.alive) {
+                      neighbor++;
+                    }
+                  }
+                }
+              }
+              this.refs[ix + '_' + iy].setState({ neighbor: neighbor });
+            }
+          }
+          // Update "alive" state for all cells
+          for (var iy = 0; iy < this.props.ny; iy++) {
+            for (var ix = 0; ix < this.props.ny; ix++) {
+              this.refs[ix + '_' + iy].updateAlive();
+            }
+          }
+        },
+
+        getLines: function() {
+          var lines = [];
+          for (var iy = 0; iy < this.props.ny; iy++) {
+            for (var ix = 0; ix < this.props.ny; ix++) {
+              var ref = ix + '_' + iy;
+              lines.push(<Cell ref={ref} defaultAlive={Math.floor(Math.random()*2) == 1} />)
+            }
+            lines.push(<br />)
+          }
+          return lines;
+        },
+
+        render: function() {
+          return (
+            <div>
+              <button className="button" onClick={this.clickStart}>start</button>
+              <button className="button" onClick={this.clickStop}>stop</button>
+              <br /><br />
+              <div>{this.getLines()}</div>
+            </div>
+          );
+        }
+      });
+
+
+      ////////////////
+      // Cell Class //
+      ////////////////
+
+      var Cell = React.createClass({
+
+        getInitialState: function() {
+          return {
+            alive: this.props.defaultAlive,
+            neighbor: 0,
+            age: 0,
+          }
+        },
+
+        // Update "alive" and "age" state
+        updateAlive: function() {
+          if (this.state.alive) {
+            if (this.state.neighbor == 2 || this.state.neighbor == 3) {  
+              this.setState({ alive: true, age: this.state.age + 1 });
+            } else {
+              this.setState({ alive: false, age: 0 });
+            }
+          } else {
+            if (this.state.neighbor == 3) {
+              this.setState({ alive: true, age: this.state.age + 1 });
+            } else {
+              this.setState({ alive: false, age: 0 });
+            }
+          }
+        },
+
+        // Click handler for each cell
+        clickHandler: function() {
+          this.setState({ alive: !this.state.alive });
+        },
+
+        render: function() {
+          return (
+            <div className={this.state.alive ? 'cell alive'+Math.min(this.state.age, 8) : 'cell'} onClick={this.clickHandler}></div>
+          );
+        }
+      });
+
+      // Render the board
+      ReactDOM.render(
+        <Board nx={20} ny={20} />,
+        document.getElementById('content')
+      );
+
+    </script>
+  </body>
+</html>
